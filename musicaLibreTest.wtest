@@ -1,0 +1,94 @@
+import musicaLibre.*
+
+describe "Tests Música Libre" {
+  
+  const usuarioComun1 = new Usuario(
+    nombre = "Juan",
+    saldoDisponible = 20000
+  )
+  const artista1 = new Artista()
+  const estudiante1 = new Estudiante(
+    nombre = "Juanita",
+    saldoDisponible = album1.precioDeDescarga() + 1
+  )
+
+  const album1 = new Album(
+    nombre = "nuevo2",
+    artista = artista1,
+    precioBase = 10000,
+    cantidadDeCanciones = 18,
+    cantidadDeVentas = 49
+  )
+  const album4 = new Album(
+    nombre = "otro",
+    precioBase = 10000, //Precio de descarga en preventa (-50%) = 5000
+    artista = artista1,
+    cantidadDeCanciones = 10
+  )
+
+  const mecena1 = new Mecena(
+    nombre = "Juan2",
+    saldoDisponible = 15000
+  )
+  
+  test "1. Compra en preventa" {
+
+    usuarioComun1.comprar(album1)
+    assert.equals(1, usuarioComun1.albumsComprados().size())
+    assert.equals(5000, album1.precioDeDescarga())
+  }
+
+  test "2. Límite estudiantil" {
+    assert.notThat(estudiante1.puedeComprarAlbum(album1))
+  }
+
+  test "3. Fin de preventa" {
+    const album2 = new Album(
+      nombre = "nuevo3",
+      artista = artista1,
+      precioBase = 10000,
+      cantidadDeCanciones = 10,
+      cantidadDeVentas = 49
+    )
+
+    album2.registrarUnaVenta()
+    assert.equals(7000, album2.precioDeDescarga())
+  }
+
+  test "4. Descuento estudiantil" {
+    assert.equals(4000, estudiante1.precioAPagarPorAlbum(album4))
+  }
+
+  test "5. Aporte del mecenas" {
+    assert.equals(6000, mecena1.precioAPagarPorAlbum(album4))
+    mecena1.aumentarPorcentajeAdicional(30)
+    assert.equals(7500, mecena1.precioAPagarPorAlbum(album4))
+  }
+
+  test "6. Compra duplicada" {
+    const album3 = new Album(
+      nombre = "otro",
+      precioBase = 5000,
+      artista = artista1,
+      cantidadDeCanciones = 10
+    )
+    
+    estudiante1.comprar(album3)
+    assert.notThat(estudiante1.puedeComprarAlbum(album3))
+    assert.equals(1, estudiante1.albumsComprados().size())
+  }
+
+  //El enunciado olvida aclarar que el album debe tener precio de venta de 5000 para este séptimo test
+  test "7. Ingresos del artista" {
+    artista1.publicarAlbum(album4)
+    artista1.recibirVentaDeAlbum(album4, usuarioComun1)
+    assert.equals(5000, artista1.dineroDeVentas()) //Ojo, este test obliga a agregar comportamiento: mensaje [artista].dineroDeVentas()
+    assert.equals(1, artista1.albumsPublicados().size())
+  }
+
+  test "8. Regalo al mecenas" {
+    mecena1.recibirRegalo(1000) //Al recibir el regalo, aumenta ese 10% (porcentajeDeAporteAdicional 20% → 30%)
+
+    assert.equals(6500, mecena1.precioAPagarPorAlbum(album4))
+  }
+}
